@@ -44,6 +44,13 @@ class GameObject:
     sprite: pygame.Surface
     rect: pygame.Rect
 
+    def update_rect(self) -> None:
+        """
+        Update rectangle position to match current x,y coordinates
+        """
+        self.rect.x = self.x
+        self.rect.y = self.y
+
 class Player(GameObject):
     """
     Player class representing the spaceship controlled by the user
@@ -58,7 +65,7 @@ class Player(GameObject):
         new_x = self.x + (direction * PLAYER_SPEED)
         if 0 <= new_x <= SCREEN_WIDTH - self.rect.width:
             self.x = new_x
-            self.rect.x = self.x
+            self.update_rect()
 
 class Bullet(GameObject):
     """
@@ -69,7 +76,7 @@ class Bullet(GameObject):
         Move the bullet upward
         """
         self.y -= BULLET_SPEED
-        self.rect.y = self.y
+        self.update_rect()
 
 class Alien(GameObject):
     """
@@ -83,7 +90,7 @@ class Alien(GameObject):
             direction (int): Direction of movement (-1 for left, 1 for right)
         """
         self.x += direction * ALIEN_SPEED
-        self.rect.x = self.x
+        self.update_rect()
 
 class Game:
     """
@@ -148,6 +155,7 @@ class Game:
                     self.alien_sprite,
                     self.alien_sprite.get_rect()
                 )
+                alien.update_rect()  # Initialize alien rectangle position
                 self.aliens.append(alien)
 
     def handle_input(self) -> None:
@@ -173,11 +181,12 @@ class Game:
         Create a new bullet
         """
         bullet = Bullet(
-            self.player.x + self.player_sprite.get_width() // 2,
+            self.player.x + self.player_sprite.get_width() // 2 - self.bullet_sprite.get_width() // 2,
             self.player.y,
             self.bullet_sprite,
             self.bullet_sprite.get_rect()
         )
+        bullet.update_rect()  # Initialize bullet rectangle position
         self.bullets.append(bullet)
 
     def update(self) -> None:
