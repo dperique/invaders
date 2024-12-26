@@ -12,6 +12,25 @@ When I used to play games, I noticed that I could think about problems in the ba
 
 I'll design more things into the game like using different keys that can help me train my hands for faster trills in piano.
 
+## Project Structure
+
+```
+.
+├── logo/
+│   └── invaders_logo1.png     # Game logo image
+├── src/
+│   ├── constants.py           # Game constants and configurations
+│   ├── game.py                # Main game logic and loop
+│   ├── game_objects.py        # Game entities (player, aliens, bullets)
+│   └── options.py             # Game options handling
+├── create_assets.py           # Script to generate game assets
+├── game_options.json          # Stores game settings
+├── high_score.json            # Stores player high scores
+├── requirements.txt           # Python dependencies
+├── README.md                  # Project documentation
+└── space_invaders.py          # Main entry point
+```
+
 ## Installation
 
 1. Clone the repository
