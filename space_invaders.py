@@ -28,7 +28,7 @@ PLAYER_SPEED: int = 5
 BULLET_SPEED: int = 7
 ALIEN_SPEED: int = 2
 FPS: int = 60
-MAX_BULLETS: int = 3  # Maximum number of bullets allowed on screen
+MAX_BULLETS: int = 10  # Maximum number of bullets allowed on screen
 
 # Colors
 WHITE: Tuple[int, int, int] = (255, 255, 255)
@@ -210,6 +210,10 @@ class Game:
         # Check collisions
         self.check_collisions()
 
+        # Check if all aliens are defeated
+        if not self.aliens:
+            self.level_complete()
+
     def update_aliens(self) -> None:
         """
         Update alien positions and movement direction
@@ -302,6 +306,16 @@ class Game:
             self.update()
             self.draw()
             clock.tick(FPS)
+
+    def level_complete(self) -> None:
+        """
+        Handle level completion by resetting aliens and increasing difficulty
+        """
+        global ALIEN_SPEED
+        ALIEN_SPEED += 0.1  # Make aliens move faster in next level
+        self.create_aliens()
+        self.alien_direction = 1
+        self.bullets.clear()  # Clear any remaining bullets
 
 if __name__ == "__main__":
     game = Game()
