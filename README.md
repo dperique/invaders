@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logos/invaders_logo1.png" alt="Space Invaders Logo" width="400"/>
+  <img src="logo/invaders_logo1.png" alt="Space Invaders Logo" width="400"/>
 </p>
 
 # Space Invaders
