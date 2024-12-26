@@ -28,6 +28,7 @@ PLAYER_SPEED: int = 5
 BULLET_SPEED: int = 7
 ALIEN_SPEED: int = 2
 FPS: int = 60
+MAX_BULLETS: int = 3  # Maximum number of bullets allowed on screen
 
 # Colors
 WHITE: Tuple[int, int, int] = (255, 255, 255)
@@ -178,16 +179,17 @@ class Game:
 
     def shoot(self) -> None:
         """
-        Create a new bullet
+        Create a new bullet if under the maximum limit
         """
-        bullet = Bullet(
-            self.player.x + self.player_sprite.get_width() // 2 - self.bullet_sprite.get_width() // 2,
-            self.player.y,
-            self.bullet_sprite,
-            self.bullet_sprite.get_rect()
-        )
-        bullet.update_rect()  # Initialize bullet rectangle position
-        self.bullets.append(bullet)
+        if len(self.bullets) < MAX_BULLETS:
+            bullet = Bullet(
+                self.player.x + self.player_sprite.get_width() // 2 - self.bullet_sprite.get_width() // 2,
+                self.player.y,
+                self.bullet_sprite,
+                self.bullet_sprite.get_rect()
+            )
+            bullet.update_rect()  # Initialize bullet rectangle position
+            self.bullets.append(bullet)
 
     def update(self) -> None:
         """
@@ -271,6 +273,10 @@ class Game:
         high_score_text = font.render(f"High Score: {self.high_score}", True, WHITE)
         self.screen.blit(score_text, (10, 10))
         self.screen.blit(high_score_text, (10, 40))
+
+        # Add bullet count display
+        bullet_text = font.render(f"Bullets: {len(self.bullets)}/{MAX_BULLETS}", True, WHITE)
+        self.screen.blit(bullet_text, (10, 70))
 
         if self.game_over:
             game_over_text = font.render("GAME OVER - Press R to Restart", True, WHITE)
