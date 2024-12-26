@@ -98,10 +98,6 @@ class Game:
         self.alien_sprite = pygame.image.load("assets/alien.png").convert_alpha()
         self.bullet_sprite = pygame.image.load("assets/bullet.png").convert_alpha()
 
-        # Load sounds
-        self.shoot_sound = pygame.mixer.Sound("assets/shoot.wav")
-        self.explosion_sound = pygame.mixer.Sound("assets/explosion.wav")
-
         self.reset_game()
         self.load_high_score()
 
@@ -174,7 +170,7 @@ class Game:
 
     def shoot(self) -> None:
         """
-        Create a new bullet and play shoot sound
+        Create a new bullet
         """
         bullet = Bullet(
             self.player.x + self.player_sprite.get_width() // 2,
@@ -183,7 +179,6 @@ class Game:
             self.bullet_sprite.get_rect()
         )
         self.bullets.append(bullet)
-        self.shoot_sound.play()
 
     def update(self) -> None:
         """
@@ -231,7 +226,6 @@ class Game:
         for bullet in self.bullets[:]:
             for alien in self.aliens[:]:
                 if bullet.rect.colliderect(alien.rect):
-                    self.explosion_sound.play()
                     self.aliens.remove(alien)
                     self.bullets.remove(bullet)
                     self.score += 100
