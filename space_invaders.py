@@ -16,6 +16,7 @@ from typing import List, Tuple, Optional
 from rich import print
 from dataclasses import dataclass
 import json
+import random
 
 # Initialize Pygame and its mixer
 pygame.init()
@@ -27,8 +28,11 @@ SCREEN_HEIGHT: int = 600
 PLAYER_SPEED: int = 5
 BULLET_SPEED: int = 7
 ALIEN_SPEED: int = 2
+ALIEN_BULLET_SPEED: int = 5
+ALIEN_SHOOT_CHANCE: float = 0.02  # 2% chance per alien per second
 FPS: int = 60
 MAX_BULLETS: int = 10  # Maximum number of bullets allowed on screen
+STARTING_LIVES: int = 3
 
 # Colors
 WHITE: Tuple[int, int, int] = (255, 255, 255)
@@ -79,6 +83,17 @@ class Bullet(GameObject):
         self.y -= BULLET_SPEED
         self.update_rect()
 
+class AlienBullet(GameObject):
+    """
+    Bullet class for projectiles fired by aliens
+    """
+    def move(self) -> None:
+        """
+        Move the bullet downward
+        """
+        self.y += ALIEN_BULLET_SPEED
+        self.update_rect()
+
 class Alien(GameObject):
     """
     Alien class representing enemy ships
@@ -120,11 +135,15 @@ class Game:
             self.player_sprite.get_rect()
         )
         self.bullets: List[Bullet] = []
+        self.alien_bullets: List[AlienBullet] = []
         self.aliens: List[Alien] = []
         self.create_aliens()
         self.score: int = 0
+        self.lives: int = STARTING_LIVES
         self.game_over: bool = False
         self.alien_direction: int = 1
+        self.player_invulnerable: bool = False
+        self.invulnerable_timer: int = 0
 
     def load_high_score(self) -> None:
         """
@@ -198,14 +217,27 @@ class Game:
         if self.game_over:
             return
 
+        # Update invulnerability
+        if self.player_invulnerable:
+            self.invulnerable_timer -= 1
+            if self.invulnerable_timer <= 0:
+                self.player_invulnerable = False
+
         # Update bullets
         for bullet in self.bullets[:]:
             bullet.move()
             if bullet.y < 0:
                 self.bullets.remove(bullet)
 
-        # Update aliens
+        # Update alien bullets
+        for bullet in self.alien_bullets[:]:
+            bullet.move()
+            if bullet.y > SCREEN_HEIGHT:
+                self.alien_bullets.remove(bullet)
+
+        # Update aliens and their shooting
         self.update_aliens()
+        self.alien_shoot()
 
         # Check collisions
         self.check_collisions()
@@ -234,10 +266,26 @@ class Game:
             for alien in self.aliens:
                 alien.move(self.alien_direction)
 
+    def alien_shoot(self) -> None:
+        """
+        Random chance for aliens to shoot
+        """
+        for alien in self.aliens:
+            if random.random() < ALIEN_SHOOT_CHANCE / FPS:
+                bullet = AlienBullet(
+                    alien.x + self.alien_sprite.get_width() // 2,
+                    alien.y + self.alien_sprite.get_height(),
+                    self.bullet_sprite,
+                    self.bullet_sprite.get_rect()
+                )
+                bullet.update_rect()
+                self.alien_bullets.append(bullet)
+
     def check_collisions(self) -> None:
         """
-        Check for collisions between bullets and aliens
+        Check for collisions between bullets, aliens, and player
         """
+        # Bullet-alien collisions
         for bullet in self.bullets[:]:
             for alien in self.aliens[:]:
                 if bullet.rect.colliderect(alien.rect):
@@ -249,10 +297,35 @@ class Game:
                         self.save_high_score()
                     break
 
-        # Check if aliens reached the player
-        for alien in self.aliens:
-            if alien.y + alien.rect.height >= self.player.y:
-                self.game_over = True
+        # Check if aliens reached the player or collided with player
+        if not self.player_invulnerable:
+            # Check alien collisions
+            for alien in self.aliens:
+                if (alien.y + alien.rect.height >= self.player.y or
+                    alien.rect.colliderect(self.player.rect)):
+                    self.player_hit()
+                    break
+            
+            # Check alien bullet collisions
+            for bullet in self.alien_bullets[:]:
+                if bullet.rect.colliderect(self.player.rect):
+                    self.alien_bullets.remove(bullet)
+                    self.player_hit()
+                    break
+
+    def player_hit(self) -> None:
+        """
+        Handle player being hit by alien
+        """
+        self.lives -= 1
+        if self.lives <= 0:
+            self.game_over = True
+        else:
+            # Reset player position and give temporary invulnerability
+            self.player.x = SCREEN_WIDTH // 2
+            self.player.update_rect()
+            self.player_invulnerable = True
+            self.invulnerable_timer = 120  # 2 seconds at 60 FPS
 
     def draw(self) -> None:
         """
@@ -260,27 +333,33 @@ class Game:
         """
         self.screen.fill(BLACK)
 
-        # Draw player
-        self.screen.blit(self.player_sprite, (self.player.x, self.player.y))
+        # Draw player (flashing if invulnerable)
+        if not self.player_invulnerable or pygame.time.get_ticks() % 200 < 100:
+            self.screen.blit(self.player_sprite, (self.player.x, self.player.y))
 
         # Draw bullets
         for bullet in self.bullets:
+            self.screen.blit(self.bullet_sprite, (bullet.x, bullet.y))
+
+        # Draw alien bullets
+        for bullet in self.alien_bullets:
             self.screen.blit(self.bullet_sprite, (bullet.x, bullet.y))
 
         # Draw aliens
         for alien in self.aliens:
             self.screen.blit(self.alien_sprite, (alien.x, alien.y))
 
-        # Draw score
+        # Draw UI
         font = pygame.font.Font(None, 36)
         score_text = font.render(f"Score: {self.score}", True, WHITE)
         high_score_text = font.render(f"High Score: {self.high_score}", True, WHITE)
+        lives_text = font.render(f"Lives: {self.lives}", True, WHITE)
+        bullet_text = font.render(f"Bullets: {len(self.bullets)}/{MAX_BULLETS}", True, WHITE)
+
         self.screen.blit(score_text, (10, 10))
         self.screen.blit(high_score_text, (10, 40))
-
-        # Add bullet count display
-        bullet_text = font.render(f"Bullets: {len(self.bullets)}/{MAX_BULLETS}", True, WHITE)
-        self.screen.blit(bullet_text, (10, 70))
+        self.screen.blit(lives_text, (10, 70))
+        self.screen.blit(bullet_text, (10, 100))
 
         if self.game_over:
             game_over_text = font.render("GAME OVER - Press R to Restart", True, WHITE)
@@ -311,11 +390,13 @@ class Game:
         """
         Handle level completion by resetting aliens and increasing difficulty
         """
-        global ALIEN_SPEED
+        global ALIEN_SPEED, ALIEN_SHOOT_CHANCE
         ALIEN_SPEED += 0.1  # Make aliens move faster in next level
+        ALIEN_SHOOT_CHANCE += 0.002  # Make aliens shoot more frequently
         self.create_aliens()
         self.alien_direction = 1
         self.bullets.clear()  # Clear any remaining bullets
+        self.alien_bullets.clear()  # Clear any remaining alien bullets
 
 if __name__ == "__main__":
     game = Game()
