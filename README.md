@@ -8,9 +8,9 @@
 
 This is a simple implementation of the classic arcade game "Space Invaders".
 
-When I used to play games, I noticed that I could think about problems in the background. I also noticed that I could train my ability to stay calm and focused to solve a problem in realtime (e.g., get out of a sticky situation vs. panicing and giving up). This skill applies well to motorcycling and driving in rush hour traffic or even fixing a problem at work where I made an error and need to correct it quickly to recover.
+When playing video games, I think about solving problems in the background and train my ability to stay calm and focused to solve problems in realtime (e.g., get out of a sticky situation vs. panicing and giving up). These skills apply well to motorcycling, driving in rush hour traffic, or any urgent siutations where maintaining your composure is key. This game was created to help me concentrate on solving problems in realtime and maintain the ability to stay calm and focused even in the midst of a stressful situation.
 
-I'll design more things into the game like using different keys that can help me train my hands for faster trills in piano.
+The game has options that allow you to dial the difficulty up or down to avoid frustration so you mind can focus on other things while playing. As the game gets to easy, you can dial up the difficulty to make it more challenging, but remember, the purpose of the game is to train your ability to stay calm and focused even in the midst of a stressful situation.
 
 ## Project Structure
 
@@ -31,14 +31,24 @@ I'll design more things into the game like using different keys that can help me
 └── space_invaders.py          # Main entry point
 ```
 
-## Installation
+## Quick Start
 
-1. Clone the repository
-2. Run `python -m venv .venv`
-3. Run `source .venv/bin/activate`
-4. Run `pip install -r requirements.txt`
-5. Run `python create_assets.py` to create the assets
-6. Run `python space_invaders.py` to start the game
+```bash
+# Clone the repository
+git clone https://github.com/dperique/invaders.git
+cd invaders
+
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate   # On Windows, use: .venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Generate game assets and start playing
+python create_assets.py
+python space_invaders.py
+```
 
 ## Controls
 
@@ -58,5 +68,4 @@ I'll design more things into the game like using different keys that can help me
 - The player can shoot bullets to destroy aliens.
 - The game ends when the player is hit by an alien bullet or runs out of lives.
 - The game can be paused by pressing P.
-
-## Notes
+- If the game is too easy or too hard, adjust the difficulty in the options menu.
