@@ -12,7 +12,7 @@ How to run:
 import pygame
 import sys
 from pathlib import Path
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Dict, Any
 from rich import print
 from dataclasses import dataclass
 import json
@@ -109,11 +109,142 @@ class Alien(GameObject):
         self.x += direction * ALIEN_SPEED
         self.update_rect()
 
+@dataclass
+class GameOptions:
+    """
+    Stores game configuration options.
+
+    Attributes:
+        missile_speed: Speed of player missiles (pixels per frame)
+        lives: Number of player lives
+        invader_speed_increment: How much faster invaders get after each wave (multiplier)
+    """
+    missile_speed: float = 10.0
+    lives: int = 3
+    invader_speed_increment: float = 1.2
+
+class OptionsMenu:
+    """
+    Handles the options menu interface and settings.
+    """
+    def __init__(self, screen: pygame.Surface, options: GameOptions):
+        """
+        Initialize the options menu.
+
+        Args:
+            screen: Pygame surface to draw on
+            options: Current game options
+        """
+        self.screen = screen
+        self.options = options
+        self.font = pygame.font.Font(None, 36)
+        self.selected_option = 0
+        self.options_list = [
+            ("Missile Speed", "missile_speed", 5.0, 20.0, 1.0),
+            ("Lives", "lives", 1, 5, 1),
+            ("Invader Speed Increment", "invader_speed_increment", 1.0, 2.0, 0.1)
+        ]
+
+    def draw(self) -> None:
+        """
+        Draw the options menu on the screen.
+        """
+        self.screen.fill((0, 0, 0))
+
+        title = self.font.render("OPTIONS MENU", True, (255, 255, 255))
+        title_rect = title.get_rect(center=(self.screen.get_width() // 2, 50))
+        self.screen.blit(title, title_rect)
+
+        for i, (label, attr, min_val, max_val, step) in enumerate(self.options_list):
+            color = (255, 255, 0) if i == self.selected_option else (255, 255, 255)
+            value = getattr(self.options, attr)
+            text = f"{label}: {value:.1f}" if isinstance(value, float) else f"{label}: {value}"
+            text_surface = self.font.render(text, True, color)
+            text_rect = text_surface.get_rect(center=(self.screen.get_width() // 2, 150 + i * 50))
+            self.screen.blit(text_surface, text_rect)
+
+        # Draw instructions
+        instructions = self.font.render("↑↓: Select  ←→: Adjust  ESC: Save & Exit", True, (128, 128, 128))
+        inst_rect = instructions.get_rect(center=(self.screen.get_width() // 2, self.screen.get_height() - 50))
+        self.screen.blit(instructions, inst_rect)
+
+    def handle_input(self, event: pygame.event) -> bool:
+        """
+        Handle input events for the options menu.
+
+        Args:
+            event: Pygame event to process
+
+        Returns:
+            bool: True if should exit options menu, False otherwise
+        """
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_ESCAPE:
+                self.save_options()
+                return True
+
+            elif event.key == pygame.K_UP:
+                self.selected_option = (self.selected_option - 1) % len(self.options_list)
+
+            elif event.key == pygame.K_DOWN:
+                self.selected_option = (self.selected_option + 1) % len(self.options_list)
+
+            elif event.key in (pygame.K_LEFT, pygame.K_RIGHT):
+                self.adjust_value(event.key == pygame.K_RIGHT)
+
+        return False
+
+    def adjust_value(self, increase: bool) -> None:
+        """
+        Adjust the selected option value.
+
+        Args:
+            increase: True to increase value, False to decrease
+        """
+        label, attr, min_val, max_val, step = self.options_list[self.selected_option]
+        current_value = getattr(self.options, attr)
+
+        if increase:
+            new_value = min(current_value + step, max_val)
+        else:
+            new_value = max(current_value - step, min_val)
+
+        setattr(self.options, attr, new_value)
+
+    def save_options(self) -> None:
+        """
+        Save the current options to a file.
+        """
+        options_dict = {
+            "missile_speed": self.options.missile_speed,
+            "lives": self.options.lives,
+            "invader_speed_increment": self.options.invader_speed_increment
+        }
+        with open("game_options.json", "w") as f:
+            json.dump(options_dict, f)
+
+def load_options() -> GameOptions:
+    """
+    Load game options from file or return defaults if file doesn't exist.
+
+    Returns:
+        GameOptions: Loaded or default game options
+    """
+    try:
+        with open("game_options.json", "r") as f:
+            options_dict = json.load(f)
+            return GameOptions(**options_dict)
+    except (FileNotFoundError, json.JSONDecodeError):
+        return GameOptions()
+
 class Game:
     """
     Main game class handling game logic and state
     """
     def __init__(self) -> None:
+        """
+        Initialize the game
+        """
         self.screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         pygame.display.set_caption("Space Invaders")
 
@@ -122,13 +253,24 @@ class Game:
         self.alien_sprite = pygame.image.load("assets/alien.png").convert_alpha()
         self.bullet_sprite = pygame.image.load("assets/bullet.png").convert_alpha()
 
-        self.reset_game()
+        # Initialize options first
+        self.options = load_options()
+        self.options_menu = OptionsMenu(self.screen, self.options)
+        self.in_options_menu = False
+
+        # Then load high score and reset game
         self.load_high_score()
+        self.reset_game()
 
     def reset_game(self) -> None:
         """
         Reset the game state for a new game
         """
+        # Reset global speed values
+        global ALIEN_SPEED, ALIEN_SHOOT_CHANCE
+        ALIEN_SPEED = 2  # Reset to initial value defined in constants
+        ALIEN_SHOOT_CHANCE = 0.02  # Reset to initial value defined in constants
+
         self.player = Player(
             SCREEN_WIDTH // 2,
             SCREEN_HEIGHT - 60,
@@ -140,7 +282,7 @@ class Game:
         self.aliens: List[Alien] = []
         self.create_aliens()
         self.score: int = 0
-        self.lives: int = STARTING_LIVES
+        self.lives: int = self.options.lives  # Use lives from options
         self.game_over: bool = False
         self.alien_direction: int = 1
         self.player_invulnerable: bool = False
@@ -185,23 +327,20 @@ class Game:
         """
         Handle player input for movement and shooting
         """
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_p:
-                    self.paused = not self.paused
+        if self.game_over:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_r]:
+                self.reset_game()
+            return
 
         if not self.paused:
+            # Move this outside the event loop for smooth movement
             keys = pygame.key.get_pressed()
             if keys[pygame.K_LEFT]:
                 self.player.move(-1)
             if keys[pygame.K_RIGHT]:
                 self.player.move(1)
-
-            # Handle shooting with spacebar
-            if keys[pygame.K_SPACE] and not self.game_over:
+            if keys[pygame.K_SPACE]:
                 if self.shoot_timer <= 0:
                     self.shoot()
                     self.shoot_timer = SHOOT_DELAY
@@ -221,7 +360,7 @@ class Game:
                 self.bullet_sprite,
                 self.bullet_sprite.get_rect()
             )
-            bullet.update_rect()  # Initialize bullet rectangle position
+            bullet.update_rect()
             self.bullets.append(bullet)
 
     def update(self) -> None:
@@ -237,9 +376,10 @@ class Game:
             if self.invulnerable_timer <= 0:
                 self.player_invulnerable = False
 
-        # Update bullets
+        # Update bullets with custom speed
         for bullet in self.bullets[:]:
-            bullet.move()
+            bullet.y -= self.options.missile_speed  # Use missile speed from options
+            bullet.update_rect()
             if bullet.y < 0:
                 self.bullets.remove(bullet)
 
@@ -398,14 +538,37 @@ class Game:
         clock = pygame.time.Clock()
 
         while True:
-            self.handle_input()
+            # Handle window close and pause events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
 
-            keys = pygame.key.get_pressed()
-            if self.game_over and keys[pygame.K_r]:
-                self.reset_game()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_q:  # Add quit on 'Q' press
+                        pygame.quit()
+                        sys.exit()
+                    elif event.key == pygame.K_p:
+                        self.paused = not self.paused
+                    elif event.key == pygame.K_o and not self.in_options_menu:
+                        self.in_options_menu = True
 
-            self.update()
-            self.draw()
+            if self.in_options_menu:
+                if self.options_menu.handle_input(event):
+                    self.in_options_menu = False
+
+            # Handle continuous input (movement and shooting)
+            if not self.in_options_menu:
+                self.handle_input()
+
+            if self.in_options_menu:
+                self.options_menu.draw()
+            else:
+                # Regular game update and draw
+                self.update()
+                self.draw()
+
+            pygame.display.flip()
             clock.tick(FPS)
 
     def level_complete(self) -> None:
@@ -413,12 +576,12 @@ class Game:
         Handle level completion by resetting aliens and increasing difficulty
         """
         global ALIEN_SPEED, ALIEN_SHOOT_CHANCE
-        ALIEN_SPEED += 0.1  # Make aliens move faster in next level
-        ALIEN_SHOOT_CHANCE += 0.002  # Make aliens shoot more frequently
+        ALIEN_SPEED *= self.options.invader_speed_increment  # Use speed increment from options
+        ALIEN_SHOOT_CHANCE += 0.002
         self.create_aliens()
         self.alien_direction = 1
-        self.bullets.clear()  # Clear any remaining bullets
-        self.alien_bullets.clear()  # Clear any remaining alien bullets
+        self.bullets.clear()
+        self.alien_bullets.clear()
 
 if __name__ == "__main__":
     game = Game()

@@ -26,6 +26,12 @@ I'll design more things into the game like using different keys that can help me
 - Left/Right: Move the player left or right
 - Space: Shoot a bullet
 - P: Pause the game
+- O: Open options menu
+- Q: Quit game
+- In options menu:
+  - ↑/↓: Select option
+  - ←/→: Adjust value
+  - ESC: Save and exit options
 
 ## Gameplay
 
