@@ -23,7 +23,7 @@ The game has options that allow you to dial the difficulty up or down to avoid f
 │   ├── game.py                # Main game logic and loop
 │   ├── game_objects.py        # Game entities (player, aliens, bullets)
 │   └── options.py             # Game options handling
-├── create_assets.py           # Script to generate game assets
+├── create_assets.py           # Script to generate game assets (use only if they change)
 ├── game_options.json          # Stores game settings
 ├── high_score.json            # Stores player high scores
 ├── requirements.txt           # Python dependencies
@@ -45,8 +45,7 @@ source .venv/bin/activate   # On Windows, use: .venv\Scripts\activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Generate game assets and start playing
-python create_assets.py
+# Start playing
 python space_invaders.py
 ```
 
