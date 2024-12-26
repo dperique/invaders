@@ -25,14 +25,15 @@ pygame.mixer.init()
 # Constants
 SCREEN_WIDTH: int = 800
 SCREEN_HEIGHT: int = 600
-PLAYER_SPEED: int = 5
-BULLET_SPEED: int = 7
+PLAYER_SPEED: int = 8
+BULLET_SPEED: int = 12
 ALIEN_SPEED: int = 2
 ALIEN_BULLET_SPEED: int = 5
 ALIEN_SHOOT_CHANCE: float = 0.02  # 2% chance per alien per second
 FPS: int = 60
 MAX_BULLETS: int = 10  # Maximum number of bullets allowed on screen
 STARTING_LIVES: int = 3
+SHOOT_DELAY: int = 10  # Delay between shots when holding spacebar (in frames)
 
 # Colors
 WHITE: Tuple[int, int, int] = (255, 255, 255)
@@ -144,6 +145,8 @@ class Game:
         self.alien_direction: int = 1
         self.player_invulnerable: bool = False
         self.invulnerable_timer: int = 0
+        self.paused: bool = False
+        self.shoot_timer: int = 0
 
     def load_high_score(self) -> None:
         """
@@ -182,19 +185,30 @@ class Game:
         """
         Handle player input for movement and shooting
         """
-        keys = pygame.key.get_pressed()
-        if keys[pygame.K_LEFT]:
-            self.player.move(-1)
-        if keys[pygame.K_RIGHT]:
-            self.player.move(1)
-
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 sys.exit()
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_SPACE and not self.game_over:
+                if event.key == pygame.K_p:
+                    self.paused = not self.paused
+
+        if not self.paused:
+            keys = pygame.key.get_pressed()
+            if keys[pygame.K_LEFT]:
+                self.player.move(-1)
+            if keys[pygame.K_RIGHT]:
+                self.player.move(1)
+
+            # Handle shooting with spacebar
+            if keys[pygame.K_SPACE] and not self.game_over:
+                if self.shoot_timer <= 0:
                     self.shoot()
+                    self.shoot_timer = SHOOT_DELAY
+
+            # Update shoot timer
+            if self.shoot_timer > 0:
+                self.shoot_timer -= 1
 
     def shoot(self) -> None:
         """
@@ -214,7 +228,7 @@ class Game:
         """
         Update game state including bullets, aliens, and collisions
         """
-        if self.game_over:
+        if self.game_over or self.paused:
             return
 
         # Update invulnerability
@@ -305,7 +319,7 @@ class Game:
                     alien.rect.colliderect(self.player.rect)):
                     self.player_hit()
                     break
-            
+
             # Check alien bullet collisions
             for bullet in self.alien_bullets[:]:
                 if bullet.rect.colliderect(self.player.rect):
@@ -365,6 +379,14 @@ class Game:
             game_over_text = font.render("GAME OVER - Press R to Restart", True, WHITE)
             self.screen.blit(game_over_text,
                            (SCREEN_WIDTH // 2 - game_over_text.get_width() // 2,
+                            SCREEN_HEIGHT // 2))
+
+        # Add pause text if paused
+        if self.paused:
+            font = pygame.font.Font(None, 74)
+            pause_text = font.render("PAUSED", True, WHITE)
+            self.screen.blit(pause_text,
+                           (SCREEN_WIDTH // 2 - pause_text.get_width() // 2,
                             SCREEN_HEIGHT // 2))
 
         pygame.display.flip()
