@@ -101,8 +101,8 @@ def main() -> None:
     # Create player sprite (green)
     create_player_sprite((50, 40), (0, 255, 0), "assets/player.png")
 
-    # Create alien sprite (white)
-    create_alien_sprite((40, 40), (255, 255, 255), "assets/alien.png")
+    # Create alien sprite (red)
+    create_alien_sprite((40, 40), (255, 50, 50), "assets/alien.png")
 
     # Create bullet sprite (white)
     create_bullet_sprite((4, 15), (255, 255, 255), "assets/bullet.png")
