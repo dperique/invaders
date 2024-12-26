@@ -18,7 +18,6 @@ How to run:
 """
 
 import pygame
-import sys
 from src.game import Game
 
 def main() -> None:

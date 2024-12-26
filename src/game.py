@@ -7,6 +7,7 @@ Main game logic for Space Invaders.
 import pygame
 import random
 import json
+import sys
 from pathlib import Path
 from typing import List, Optional
 from rich import print
@@ -330,7 +331,7 @@ class Game:
         while True:
             # Store the current event for use in the options menu
             current_event = None
-            
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
@@ -344,7 +345,7 @@ class Game:
                         self.paused = not self.paused
                     elif event.key == pygame.K_o and not self.in_options_menu:
                         self.in_options_menu = True
-                
+
                 current_event = event
 
             if self.in_options_menu:
