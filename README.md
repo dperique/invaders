@@ -10,7 +10,7 @@ This is a simple implementation of the classic arcade game "Space Invaders".
 
 When playing video games, I think about solving problems in the background and train my ability to stay calm and focused to solve problems in realtime (e.g., get out of a sticky situation vs. panicing and giving up). These skills apply well to motorcycling, driving in rush hour traffic, or any urgent siutations where maintaining your composure is key. This game was created to help me concentrate on solving problems in realtime and maintain the ability to stay calm and focused even in the midst of a stressful situation.
 
-The game has options that allow you to dial the difficulty up or down to avoid frustration so you mind can focus on other things while playing. As the game gets to easy, you can dial up the difficulty to make it more challenging, but remember, the purpose of the game is to train your ability to stay calm and focused even in the midst of a stressful situation.
+The game has options that allow you to dial the difficulty up or down to avoid frustration so your mind can focus on other things while playing. As the game gets too easy, you can dial up the difficulty to make it more challenging, but remember, the purpose of the game is to train your ability to stay calm and focused even in the midst of a stressful situation, and not to get good at playing games.
 
 ## Project Structure
 
